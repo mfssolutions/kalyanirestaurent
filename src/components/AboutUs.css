@@ -1,0 +1,111 @@
+.about-us {
+  padding: 4rem 1rem;
+  background: #fff;
+}
+
+.about-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.about-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  margin-top: 2rem;
+  align-items: start;
+}
+
+.about-text p {
+  color: #444;
+  line-height: 1.8;
+  margin: 0 0 1rem;
+  font-size: 1rem;
+}
+
+.about-highlights {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.highlight-card {
+  background: #f0f7f2;
+  border-left: 4px solid #0d3b1e;
+  padding: 1.25rem 1.5rem;
+  border-radius: 0 10px 10px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.highlight-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0d3b1e;
+}
+
+.highlight-label {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Location Map */
+.about-location {
+  margin-top: 3rem;
+}
+
+.about-location__title {
+  font-size: 1.5rem;
+  color: #0d3b1e;
+  font-weight: 700;
+  margin: 0 0 1rem;
+}
+
+.about-location__map {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.about-location__map iframe {
+  display: block;
+}
+
+.about-location__address {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  color: #555;
+  line-height: 1.6;
+}
+
+@media (max-width: 1024px) {
+  .about-content {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .about-highlights {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .highlight-card {
+    flex: 1;
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-us {
+    padding: 2.5rem 0.75rem;
+  }
+
+  .highlight-card {
+    padding: 1rem;
+  }
+
+  .highlight-number {
+    font-size: 1.5rem;
+  }
+}

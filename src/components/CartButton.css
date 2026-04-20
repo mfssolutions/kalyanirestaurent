@@ -1,0 +1,55 @@
+.cart-float-btn {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0d3b1e;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 24px;
+  min-width: 320px;
+  max-width: 90vw;
+  cursor: pointer;
+  z-index: 1500;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.cart-float-btn:hover {
+  background: #1a6b3c;
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+.cart-float-btn__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.cart-float-btn__right {
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cart-float-btn__arrow {
+  font-size: 1.2rem;
+}
+
+@media (max-width: 480px) {
+  .cart-float-btn {
+    min-width: 280px;
+    padding: 12px 20px;
+    bottom: 72px;
+  }
+}
