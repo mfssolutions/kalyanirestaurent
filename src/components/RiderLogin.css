@@ -113,3 +113,20 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+.rider-login__logo { display:block; height:60px; width:auto; margin:0 auto 8px; border-radius:10px; background:#fff; padding:4px; }
+.rider-login__resend {
+  margin-top: 10px;
+  background: transparent;
+  border: 1px dashed #ffb070;
+  color: #ff6a00;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%;
+}
+.rider-login__resend:hover:not(:disabled) { background: #fff4ec; }
+.rider-login__resend:disabled { color:#888; border-color:#e5e5e5; cursor:not-allowed; background:#fafafa; }

@@ -15,6 +15,7 @@ import BillingPage from './pages/BillingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import CartPage from './pages/CartPage';
+import ProfilePage from './pages/ProfilePage';
 import PageLoader from './components/PageLoader';
 
 function App() {
@@ -32,6 +33,7 @@ function App() {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignupPage />} />
                     <Route path="/cart" element={<CartPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/checkout" element={<CheckoutPage />} />
                     <Route path="/order/:orderId" element={<OrderTrackingPage />} />
                     <Route path="/orders" element={<OrdersPage />} />

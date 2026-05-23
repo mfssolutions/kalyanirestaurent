@@ -32,7 +32,7 @@ const MobileNavbar = () => {
         <ClipboardList size={22} />
         <span>Orders</span>
       </button>
-      <button type="button" className="nav-item" onClick={() => isAuthenticated ? navigate('/orders') : navigate('/login')}>
+      <button type="button" className={`nav-item ${location.pathname === '/profile' ? 'active' : ''}`} onClick={() => isAuthenticated ? navigate('/profile') : navigate('/login', { state: { from: '/profile' } })}>
         <User size={22} />
         <span>{isAuthenticated ? 'Profile' : 'Login'}</span>
       </button>

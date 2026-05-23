@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Phone, Shield, User as UserIcon, MapPin, Home, Loader, Locate } from 'lucide-react';
+import { ArrowLeft, Phone, Shield, User as UserIcon, MapPin, Home, Loader, Locate, RotateCw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useResendTimer } from '../lib/useResendTimer';
 import './AuthPages.css';
 
 type Step = 'phone' | 'otp' | 'details';
@@ -28,6 +29,8 @@ export default function SignupPage() {
   const [locLoading, setLocLoading] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const { remaining, start, canResend } = useResendTimer(45);
 
   const redirectTo = nav.from || '/';
 
@@ -48,6 +51,19 @@ export default function SignupPage() {
     setLoading(false);
     if (!res.success) { setError(res.error || 'Failed to send OTP'); return; }
     setStep('otp');
+    start();
+  };
+
+  const handleResend = async () => {
+    if (!canResend || resending) return;
+    setError('');
+    setResending(true);
+    resetAuthFlow('recaptcha-customer');
+    const res = await sendOtp(mobile, 'recaptcha-customer');
+    setResending(false);
+    if (!res.success) { setError(res.error || 'Could not resend OTP'); return; }
+    setOtp('');
+    start();
   };
 
   const handleVerify = async (e: React.FormEvent) => {
@@ -116,11 +132,13 @@ export default function SignupPage() {
         <button className="auth-page__back" onClick={handleBack} aria-label="Back">
           <ArrowLeft size={22} />
         </button>
+        <img src="/logo.png" alt="Kalyani" className="auth-page__logo" />
         <h1>Create account</h1>
       </div>
 
       <div className="auth-page__body">
         <div className="auth-page__card">
+          <img src="/logo.png" alt="Kalyani" className="auth-page__brand-logo" />
           <h2 className="auth-page__title">
             {step === 'phone' && 'Sign up'}
             {step === 'otp' && 'Verify OTP'}
@@ -160,6 +178,20 @@ export default function SignupPage() {
               {error && <p className="auth-error">{error}</p>}
               <button type="submit" className="auth-submit" disabled={loading || otp.length < 6}>
                 {loading ? <><Loader size={16} className="auth-spinner" /> Verifying...</> : 'Verify OTP'}
+              </button>
+              <button
+                type="button"
+                className="auth-resend"
+                onClick={handleResend}
+                disabled={!canResend || resending}
+              >
+                {resending ? (
+                  <><Loader size={14} className="auth-spinner" /> Resending...</>
+                ) : canResend ? (
+                  <><RotateCw size={14} /> Resend OTP</>
+                ) : (
+                  <>Resend OTP in {remaining}s</>
+                )}
               </button>
               <button type="button" className="auth-secondary" onClick={() => { setStep('phone'); setOtp(''); resetAuthFlow('recaptcha-customer'); }}>
                 Change number

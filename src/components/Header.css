@@ -328,6 +328,17 @@
 .logo-link {
   text-decoration: none;
   color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-img {
+  height: 36px;
+  width: auto;
+  display: block;
+  border-radius: 6px;
+  background: #fff;
+  padding: 2px;
 }
 
 /* Hamburger - hidden on desktop */

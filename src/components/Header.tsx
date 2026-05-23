@@ -46,7 +46,10 @@ const Header: React.FC<HeaderProps> = ({ location }) => {
       <header className="header">
         <div className="header-container">
           <div className="header-left">
-            <Link to="/" className="logo-link"><h1 className="logo">{get('restaurant_name', 'Kalyani Restaurant')}</h1></Link>
+            <Link to="/" className="logo-link">
+              <img src="/logo.png" alt="Kalyani" className="logo-img" />
+              <h1 className="logo">{get('restaurant_name', 'Kalyani Restaurant')}</h1>
+            </Link>
             {location && (
               <span className="location-badge">
                 <MapPin size={14} />

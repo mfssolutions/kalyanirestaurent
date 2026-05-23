@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Shield, Phone, Loader } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Shield, Phone, Loader, RotateCw } from 'lucide-react';
 import { useAdmin } from '../contexts/AdminContext';
 import { useConfig } from '../contexts/ConfigContext';
+import { useResendTimer } from '../lib/useResendTimer';
 import './AdminLogin.css';
 
 export default function AdminLogin() {
@@ -11,6 +12,10 @@ export default function AdminLogin() {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const { remaining, start, canResend } = useResendTimer(45);
+
+  useEffect(() => { if (adminOtpSent) start(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [adminOtpSent]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,6 +26,17 @@ export default function AdminLogin() {
     if (!result.success) {
       setError(result.error || 'Invalid credentials');
     }
+  };
+
+  const handleResend = async () => {
+    if (!canResend || resending) return;
+    setError('');
+    setResending(true);
+    const result = await adminLogin(mobile);
+    setResending(false);
+    if (!result.success) { setError(result.error || 'Could not resend OTP'); return; }
+    setOtp('');
+    start();
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -38,6 +54,7 @@ export default function AdminLogin() {
     <div className="admin-login">
       <div className="admin-login__card">
         <div className="admin-login__header">
+          <img src="/logo.png" alt="Kalyani" className="admin-login__logo" />
           <Shield size={32} />
           <h2>Admin Login</h2>
           <p>{get('restaurant_name', 'Kalyani Restaurant')} Management</p>
@@ -78,6 +95,20 @@ export default function AdminLogin() {
             {error && <p className="admin-login__error">{error}</p>}
             <button type="submit" className="admin-login__btn" disabled={loading}>
               {loading ? <><Loader size={16} className="admin-spinner" /> Verifying...</> : 'Verify & Login'}
+            </button>
+            <button
+              type="button"
+              className="admin-login__resend"
+              onClick={handleResend}
+              disabled={!canResend || resending}
+            >
+              {resending ? (
+                <><Loader size={14} className="admin-spinner" /> Resending...</>
+              ) : canResend ? (
+                <><RotateCw size={14} /> Resend OTP</>
+              ) : (
+                <>Resend OTP in {remaining}s</>
+              )}
             </button>
           </form>
         )}

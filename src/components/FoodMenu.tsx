@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { Search, X } from 'lucide-react';
 import { useAdmin } from '../contexts/AdminContext';
 import { useCart } from '../contexts/CartContext';
 import type { MenuCategory } from '../types';
@@ -22,24 +23,69 @@ export default function FoodMenu() {
   categories.forEach(c => { catLabels[c.slug] = c.name; });
 
   const [activeCategory, setActiveCategory] = useState<MenuCategory>(catSlugs[0] || 'breakfast');
+  const [query, setQuery] = useState('');
 
-  const filteredItems = menuItems.filter(item => item.category === activeCategory && item.isAvailable);
+  const normalizedQuery = query.trim().toLowerCase();
+  const isSearching = normalizedQuery.length > 0;
+
+  const filteredItems = useMemo(() => {
+    if (isSearching) {
+      // Global fuzzy-ish substring search across name + description + category label
+      return menuItems
+        .filter(it => it.isAvailable !== false)
+        .filter(it => {
+          const hay = [
+            it.name,
+            it.description,
+            catLabels[it.category] || it.category,
+          ].filter(Boolean).join(' ').toLowerCase();
+          return normalizedQuery.split(/\s+/).every(token => hay.includes(token));
+        });
+    }
+    return menuItems.filter(item => item.category === activeCategory && item.isAvailable);
+  }, [menuItems, activeCategory, isSearching, normalizedQuery, catLabels]);
 
   return (
     <section className="food-menu" id="menu">
       <h2 className="food-menu__title">Our Menu</h2>
       <p className="food-menu__subtitle">Handcrafted dishes made with the finest ingredients</p>
-      <div className="food-menu__categories">
-        {catSlugs.map(cat => (
-          <button
-            key={cat}
-            className={`food-menu__cat-btn ${activeCategory === cat ? 'active' : ''}`}
-            onClick={() => setActiveCategory(cat)}
-          >
-            {catLabels[cat] || cat}
+
+      <div className="food-menu__search">
+        <Search size={18} className="food-menu__search-icon" />
+        <input
+          type="search"
+          className="food-menu__search-input"
+          placeholder="Search dishes, ingredients, categories..."
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          aria-label="Search menu"
+        />
+        {query && (
+          <button className="food-menu__search-clear" onClick={() => setQuery('')} aria-label="Clear search">
+            <X size={16} />
           </button>
-        ))}
+        )}
       </div>
+
+      {!isSearching && (
+        <div className="food-menu__categories">
+          {catSlugs.map(cat => (
+            <button
+              key={cat}
+              className={`food-menu__cat-btn ${activeCategory === cat ? 'active' : ''}`}
+              onClick={() => setActiveCategory(cat)}
+            >
+              {catLabels[cat] || cat}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {isSearching && (
+        <p className="food-menu__search-meta">
+          {filteredItems.length} result{filteredItems.length === 1 ? '' : 's'} for "{query}"
+        </p>
+      )}
       <div className="food-menu__grid">
         {filteredItems.map(item => {
           const qty = getItemQuantity(item.id);
@@ -83,7 +129,7 @@ export default function FoodMenu() {
           );
         })}
         {filteredItems.length === 0 && (
-          <p className="food-menu__empty">No items available in this category right now.</p>
+          <p className="food-menu__empty">{isSearching ? 'No dishes match your search.' : 'No items available in this category right now.'}</p>
         )}
       </div>
     </section>
