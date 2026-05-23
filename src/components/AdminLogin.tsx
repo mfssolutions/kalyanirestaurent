@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Shield, Phone, KeyRound, Loader } from 'lucide-react';
+import { Shield, Phone, Loader } from 'lucide-react';
 import { useAdmin } from '../contexts/AdminContext';
 import { useConfig } from '../contexts/ConfigContext';
 import './AdminLogin.css';
@@ -8,7 +8,6 @@ export default function AdminLogin() {
   const { adminLogin, adminVerifyOtp, adminOtpSent } = useAdmin();
   const { get } = useConfig();
   const [mobile, setMobile] = useState('');
-  const [accessKey, setAccessKey] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,7 +16,7 @@ export default function AdminLogin() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const result = await adminLogin(mobile, accessKey);
+    const result = await adminLogin(mobile);
     setLoading(false);
     if (!result.success) {
       setError(result.error || 'Invalid credentials');
@@ -28,7 +27,7 @@ export default function AdminLogin() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const success = await adminVerifyOtp(otp, mobile);
+    const success = await adminVerifyOtp(otp);
     setLoading(false);
     if (!success) {
       setError('Invalid OTP. Please try again.');
@@ -56,20 +55,11 @@ export default function AdminLogin() {
                 maxLength={10}
               />
             </div>
-            <div className="admin-login__field">
-              <KeyRound size={18} />
-              <input
-                type="password"
-                placeholder="Access Key"
-                value={accessKey}
-                onChange={e => setAccessKey(e.target.value)}
-              />
-            </div>
             {error && <p className="admin-login__error">{error}</p>}
-            <button type="submit" className="admin-login__btn" disabled={loading}>
-              {loading ? <><Loader size={16} className="admin-spinner" /> Verifying...</> : 'Verify & Send OTP'}
+            <button type="submit" className="admin-login__btn" disabled={loading || mobile.length < 10}>
+              {loading ? <><Loader size={16} className="admin-spinner" /> Sending OTP...</> : 'Send OTP'}
             </button>
-            <p className="admin-login__hint">Admin access is managed by backend only</p>
+            <p className="admin-login__hint">Only registered admin numbers can sign in</p>
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp} className="admin-login__form">
@@ -91,7 +81,7 @@ export default function AdminLogin() {
             </button>
           </form>
         )}
-        <div id="recaptcha-container"></div>
+        <div id="recaptcha-admin"></div>
       </div>
     </div>
   );

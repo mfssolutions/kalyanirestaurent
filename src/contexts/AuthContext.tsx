@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const closeAuthModal = useCallback(() => {
-    resetRecaptcha();
+    resetRecaptcha('recaptcha-customer');
     confirmationRef.current = null;
     setState(s => ({ ...s, isAuthModalOpen: false, pendingMobile: null, otpSent: false, otpVerified: false, authStep: 'phone', loading: false }));
   }, []);
@@ -90,13 +90,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, loading: true }));
     try {
       const phone = `+91${mobile}`;
-      const confirmation = await sendPhoneOtp(phone);
+      const confirmation = await sendPhoneOtp(phone, 'recaptcha-customer');
       confirmationRef.current = confirmation;
       setState(s => ({ ...s, pendingMobile: mobile, otpSent: true, authStep: 'otp', loading: false }));
       return { success: true };
     } catch (err) {
       const message = (err as Error).message || 'Failed to send OTP';
-      resetRecaptcha();
+      resetRecaptcha('recaptcha-customer');
       setState(s => ({ ...s, loading: false }));
       return { success: false, error: message };
     }
@@ -172,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     localStorage.removeItem(STORAGE_KEY);
     try { await signOut(firebaseAuth); } catch { /* ignore */ }
-    resetRecaptcha();
+    resetRecaptcha('recaptcha-customer');
     confirmationRef.current = null;
     pendingUidRef.current = null;
     setState({
@@ -188,7 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetAuthFlow = useCallback(() => {
-    resetRecaptcha();
+    resetRecaptcha('recaptcha-customer');
     confirmationRef.current = null;
     setState(s => ({ ...s, authStep: 'phone', otpSent: false, otpVerified: false, pendingMobile: null, loading: false }));
   }, []);

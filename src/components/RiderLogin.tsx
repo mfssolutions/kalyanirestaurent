@@ -84,6 +84,7 @@ export default function RiderLogin() {
             </button>
           </form>
         )}
+        <div id="recaptcha-rider"></div>
       </div>
     </div>
   );

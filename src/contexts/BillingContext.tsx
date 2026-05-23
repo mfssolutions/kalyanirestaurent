@@ -1,13 +1,18 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
+import type { ConfirmationResult } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import type { BillingUser, BillingSession, Bill, BillItem, Kot, KotItem, BillingPayment, Credit, MenuItem, AccountHead } from '../types';
 import { supabase } from '../lib/supabase';
+import { sendPhoneOtp, resetRecaptcha, firebaseAuth } from '../lib/firebase';
 import { toMenuItem, toBillingUser, toBillingSession, toBill, toKot, toAccountHead, toBillingPayment, toCredit } from '../lib/mappers';
 
 interface BillingContextType {
   // Auth
   billingUser: BillingUser | null;
   isBillingAuth: boolean;
-  billingLogin: (phone: string, pin: string) => Promise<{ success: boolean; error?: string }>;
+  billingOtpSent: boolean;
+  billingLogin: (phone: string) => Promise<{ success: boolean; error?: string }>;
+  billingVerifyOtp: (otp: string) => Promise<{ success: boolean; error?: string }>;
   billingLogout: () => void;
   // Session
   session: BillingSession | null;
@@ -48,6 +53,10 @@ export function BillingProvider({ children }: { children: ReactNode }) {
     return saved ? JSON.parse(saved) : null;
   });
   const isBillingAuth = !!billingUser;
+  const [billingOtpSent, setBillingOtpSent] = useState(false);
+  const billingConfirmationRef = useRef<ConfirmationResult | null>(null);
+  const pendingBillingUserRef = useRef<Record<string, unknown> | null>(null);
+  const BILLING_RECAPTCHA = 'recaptcha-billing';
 
   // Persist billing user to localStorage (exclude PIN for security)
   useEffect(() => {
@@ -166,20 +175,47 @@ export function BillingProvider({ children }: { children: ReactNode }) {
     return () => { supabase.removeChannel(ch); };
   }, [session]);
 
-  const billingLogin = useCallback(async (phone: string, pin: string): Promise<{ success: boolean; error?: string }> => {
-    // Use server-side RPC to bypass RLS for login check
-    const { data, error } = await supabase.rpc('billing_login_check', {
-      p_phone: phone,
-      p_pin: pin,
-    });
-
+  const billingLogin = useCallback(async (phone: string): Promise<{ success: boolean; error?: string }> => {
+    // Verify phone is a registered billing user (SECURITY DEFINER RPC bypasses RLS)
+    const { data, error } = await supabase.rpc('billing_user_by_phone', { p_phone: phone });
     if (error) return { success: false, error: error.message };
-    if (!data) return { success: false, error: 'Invalid phone or PIN' };
-    setBillingUser(toBillingUser(data as Record<string, unknown>));
+    if (!data) return { success: false, error: 'Not a registered billing user. Contact admin.' };
+
+    pendingBillingUserRef.current = data as Record<string, unknown>;
+
+    try {
+      const confirmation = await sendPhoneOtp(`+91${phone}`, BILLING_RECAPTCHA);
+      billingConfirmationRef.current = confirmation;
+      setBillingOtpSent(true);
+      return { success: true };
+    } catch (err) {
+      resetRecaptcha(BILLING_RECAPTCHA);
+      return { success: false, error: (err as Error).message || 'Failed to send OTP' };
+    }
+  }, []);
+
+  const billingVerifyOtp = useCallback(async (otp: string): Promise<{ success: boolean; error?: string }> => {
+    if (!billingConfirmationRef.current || !pendingBillingUserRef.current) {
+      return { success: false, error: 'Session expired. Request OTP again.' };
+    }
+    try {
+      await billingConfirmationRef.current.confirm(otp);
+    } catch {
+      return { success: false, error: 'Invalid OTP' };
+    }
+    setBillingUser(toBillingUser(pendingBillingUserRef.current));
+    setBillingOtpSent(false);
+    billingConfirmationRef.current = null;
+    pendingBillingUserRef.current = null;
     return { success: true };
   }, []);
 
-  const billingLogout = useCallback(() => {
+  const billingLogout = useCallback(async () => {
+    try { await signOut(firebaseAuth); } catch { /* ignore */ }
+    resetRecaptcha(BILLING_RECAPTCHA);
+    billingConfirmationRef.current = null;
+    pendingBillingUserRef.current = null;
+    setBillingOtpSent(false);
     setBillingUser(null);
     setSession(null);
     setBills([]);
@@ -366,7 +402,7 @@ export function BillingProvider({ children }: { children: ReactNode }) {
 
   return (
     <BillingContext.Provider value={{
-      billingUser, isBillingAuth, billingLogin, billingLogout,
+      billingUser, isBillingAuth, billingOtpSent, billingLogin, billingVerifyOtp, billingLogout,
       session, dayStarted, startDay, closeDay,
       menuItems,
       bills, saveBill,

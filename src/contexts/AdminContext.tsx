@@ -7,8 +7,8 @@ import { toMenuItem, fromMenuItem, toBanner, fromBanner, toCategory, fromCategor
 
 interface AdminContextType {
   isAdminAuthenticated: boolean;
-  adminLogin: (mobile: string, accessKey: string) => Promise<{ success: boolean; error?: string }>;
-  adminVerifyOtp: (otp: string, mobile: string) => Promise<boolean>;
+  adminLogin: (mobile: string) => Promise<{ success: boolean; error?: string }>;
+  adminVerifyOtp: (otp: string) => Promise<boolean>;
   adminLogout: () => void;
   adminOtpSent: boolean;
   menuItems: MenuItem[];
@@ -166,29 +166,26 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const adminConfirmationRef = useRef<ConfirmationResult | null>(null);
+  const ADMIN_RECAPTCHA = 'recaptcha-admin';
 
-  const adminLogin = useCallback(async (mobile: string, accessKey: string): Promise<{ success: boolean; error?: string }> => {
-    // Use server-side RPC to verify credentials (password never leaves DB)
-    const { data: valid, error } = await supabase.rpc('admin_login_check', {
-      p_phone: mobile,
-      p_password: accessKey,
-    });
-
+  const adminLogin = useCallback(async (mobile: string): Promise<{ success: boolean; error?: string }> => {
+    // Verify phone belongs to an admin via SECURITY DEFINER RPC
+    const { data: isAdmin, error } = await supabase.rpc('is_admin_phone', { p_phone: mobile });
     if (error) return { success: false, error: error.message };
-    if (!valid) return { success: false, error: 'Invalid mobile number or access key' };
+    if (!isAdmin) return { success: false, error: 'This number is not registered as an admin' };
 
     try {
-      const confirmation = await sendPhoneOtp(`+91${mobile}`);
+      const confirmation = await sendPhoneOtp(`+91${mobile}`, ADMIN_RECAPTCHA);
       adminConfirmationRef.current = confirmation;
       setAdminOtpSent(true);
       return { success: true };
     } catch (err) {
-      resetRecaptcha();
+      resetRecaptcha(ADMIN_RECAPTCHA);
       return { success: false, error: (err as Error).message || 'Failed to send OTP' };
     }
   }, []);
 
-  const adminVerifyOtp = useCallback(async (otp: string, _mobile: string): Promise<boolean> => {
+  const adminVerifyOtp = useCallback(async (otp: string): Promise<boolean> => {
     if (!adminConfirmationRef.current) return false;
     try {
       await adminConfirmationRef.current.confirm(otp);
@@ -205,7 +202,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const adminLogout = useCallback(() => {
     setIsAdminAuthenticated(false);
     localStorage.removeItem('kalyani_admin_auth');
-    resetRecaptcha();
+    resetRecaptcha(ADMIN_RECAPTCHA);
     adminConfirmationRef.current = null;
   }, []);
 

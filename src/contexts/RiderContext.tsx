@@ -1,6 +1,9 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
+import type { ConfirmationResult } from 'firebase/auth';
 import type { Rider, Order } from '../types';
 import { supabase } from '../lib/supabase';
+import { sendPhoneOtp, resetRecaptcha, firebaseAuth } from '../lib/firebase';
+import { signOut } from 'firebase/auth';
 import { toRider, toOrder } from '../lib/mappers';
 
 interface RiderContextType {
@@ -38,20 +41,13 @@ export function RiderProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem(RIDER_STORAGE_KEY);
     if (!saved) return;
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const parsed = JSON.parse(saved) as Rider;
-        // Verify rider still exists and is active
-        supabase.from('riders').select('*').eq('id', parsed.id).eq('is_active', true).maybeSingle().then(({ data }) => {
-          if (data) {
-            const riderData = toRider(data);
-            setRider(riderData);
-            setIsRiderAuthenticated(true);
-          } else {
-            localStorage.removeItem(RIDER_STORAGE_KEY);
-          }
-        });
+    const parsed = JSON.parse(saved) as Rider;
+    // Verify rider still exists and is active
+    supabase.from('riders').select('*').eq('id', parsed.id).eq('is_active', true).maybeSingle().then(({ data }) => {
+      if (data) {
+        const riderData = toRider(data);
+        setRider(riderData);
+        setIsRiderAuthenticated(true);
       } else {
         localStorage.removeItem(RIDER_STORAGE_KEY);
       }
@@ -101,7 +97,10 @@ export function RiderProvider({ children }: { children: ReactNode }) {
     return () => { supabase.removeChannel(channel); };
   }, [rider]);
 
-  // Login: check phone exists in riders table, then send OTP
+  const riderConfirmationRef = useRef<ConfirmationResult | null>(null);
+  const RIDER_RECAPTCHA = 'recaptcha-rider';
+
+  // Login: check phone exists in riders table, then send Firebase OTP
   const riderLogin = useCallback(async (phone: string): Promise<{ success: boolean; error?: string }> => {
     const { data, error } = await supabase
       .from('riders')
@@ -114,17 +113,25 @@ export function RiderProvider({ children }: { children: ReactNode }) {
       return { success: false, error: 'Not a registered rider. Contact admin.' };
     }
 
-    const { error: otpError } = await supabase.auth.signInWithOtp({ phone: `+91${phone}` });
-    if (otpError) return { success: false, error: otpError.message };
-
-    setRiderOtpSent(true);
-    return { success: true };
+    try {
+      const confirmation = await sendPhoneOtp(`+91${phone}`, RIDER_RECAPTCHA);
+      riderConfirmationRef.current = confirmation;
+      setRiderOtpSent(true);
+      return { success: true };
+    } catch (err) {
+      resetRecaptcha(RIDER_RECAPTCHA);
+      return { success: false, error: (err as Error).message || 'Failed to send OTP' };
+    }
   }, []);
 
   // Verify OTP and log rider in
   const riderVerifyOtp = useCallback(async (otp: string, phone: string): Promise<boolean> => {
-    const { error } = await supabase.auth.verifyOtp({ phone: `+91${phone}`, token: otp, type: 'sms' });
-    if (error) return false;
+    if (!riderConfirmationRef.current) return false;
+    try {
+      await riderConfirmationRef.current.confirm(otp);
+    } catch {
+      return false;
+    }
 
     // Fetch latest rider data
     const { data } = await supabase
@@ -138,12 +145,14 @@ export function RiderProvider({ children }: { children: ReactNode }) {
       setRider(riderData);
       setIsRiderAuthenticated(true);
       setRiderOtpSent(false);
+      riderConfirmationRef.current = null;
 
       // Auto set online
       await supabase.from('riders').update({ is_online: true }).eq('id', riderData.id);
       setRider(prev => prev ? { ...prev, isOnline: true } : null);
+      return true;
     }
-    return true;
+    return false;
   }, []);
 
   const riderLogout = useCallback(async () => {
@@ -151,7 +160,9 @@ export function RiderProvider({ children }: { children: ReactNode }) {
       await supabase.from('riders').update({ is_online: false }).eq('id', rider.id)
         .then(({ error }) => { if (error) console.error('Rider offline update error:', error.message); });
     }
-    await supabase.auth.signOut();
+    try { await signOut(firebaseAuth); } catch { /* ignore */ }
+    resetRecaptcha(RIDER_RECAPTCHA);
+    riderConfirmationRef.current = null;
     setIsRiderAuthenticated(false);
     setRider(null);
     setRiderOrders([]);

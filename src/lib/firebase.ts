@@ -17,24 +17,26 @@ if (!firebaseConfig.apiKey) {
 export const firebaseApp = initializeApp(firebaseConfig);
 export const firebaseAuth = getAuth(firebaseApp);
 
-let recaptchaVerifier: RecaptchaVerifier | null = null;
+const verifiers = new Map<string, RecaptchaVerifier>();
 
 export function getRecaptcha(containerId = 'recaptcha-container'): RecaptchaVerifier {
-  if (recaptchaVerifier) return recaptchaVerifier;
-  recaptchaVerifier = new RecaptchaVerifier(firebaseAuth, containerId, {
-    size: 'invisible',
-  });
-  return recaptchaVerifier;
+  const existing = verifiers.get(containerId);
+  if (existing) return existing;
+  const v = new RecaptchaVerifier(firebaseAuth, containerId, { size: 'invisible' });
+  verifiers.set(containerId, v);
+  return v;
 }
 
-export function resetRecaptcha() {
-  if (recaptchaVerifier) {
-    try { recaptchaVerifier.clear(); } catch { /* ignore */ }
-    recaptchaVerifier = null;
+export function resetRecaptcha(containerId?: string) {
+  if (containerId) {
+    const v = verifiers.get(containerId);
+    if (v) { try { v.clear(); } catch { /* ignore */ } verifiers.delete(containerId); }
+    return;
   }
+  for (const [id, v] of verifiers) { try { v.clear(); } catch { /* ignore */ } verifiers.delete(id); }
 }
 
-export async function sendPhoneOtp(phoneE164: string): Promise<ConfirmationResult> {
-  const verifier = getRecaptcha();
+export async function sendPhoneOtp(phoneE164: string, containerId = 'recaptcha-container'): Promise<ConfirmationResult> {
+  const verifier = getRecaptcha(containerId);
   return signInWithPhoneNumber(firebaseAuth, phoneE164, verifier);
 }

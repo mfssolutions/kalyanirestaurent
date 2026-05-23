@@ -141,7 +141,7 @@ export default function AuthModal() {
           </form>
         )}
 
-        <div id="recaptcha-container"></div>
+        <div id="recaptcha-customer"></div>
       </div>
     </div>
   );
