@@ -1,6 +1,8 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
+import type { ConfirmationResult } from 'firebase/auth';
 import type { MenuItem, HeroBanner, Category, Offer, Order, OrderStatus, Rider, BillingUser, AccountHead } from '../types';
 import { supabase } from '../lib/supabase';
+import { sendPhoneOtp, resetRecaptcha } from '../lib/firebase';
 import { toMenuItem, fromMenuItem, toBanner, fromBanner, toCategory, fromCategory, toOffer, fromOffer, toOrder, toRider, fromRider, toBillingUser, fromBillingUser, toAccountHead, fromAccountHead } from '../lib/mappers';
 
 interface AdminContextType {
@@ -163,6 +165,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const adminConfirmationRef = useRef<ConfirmationResult | null>(null);
+
   const adminLogin = useCallback(async (mobile: string, accessKey: string): Promise<{ success: boolean; error?: string }> => {
     // Use server-side RPC to verify credentials (password never leaves DB)
     const { data: valid, error } = await supabase.rpc('admin_login_check', {
@@ -173,26 +177,36 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     if (error) return { success: false, error: error.message };
     if (!valid) return { success: false, error: 'Invalid mobile number or access key' };
 
-    const { error: otpError } = await supabase.auth.signInWithOtp({ phone: `+91${mobile}` });
-    if (otpError) return { success: false, error: otpError.message };
-    setAdminOtpSent(true);
-    return { success: true };
+    try {
+      const confirmation = await sendPhoneOtp(`+91${mobile}`);
+      adminConfirmationRef.current = confirmation;
+      setAdminOtpSent(true);
+      return { success: true };
+    } catch (err) {
+      resetRecaptcha();
+      return { success: false, error: (err as Error).message || 'Failed to send OTP' };
+    }
   }, []);
 
-  const adminVerifyOtp = useCallback(async (otp: string, mobile: string): Promise<boolean> => {
-    const { error } = await supabase.auth.verifyOtp({ phone: `+91${mobile}`, token: otp, type: 'sms' });
-    if (!error) {
+  const adminVerifyOtp = useCallback(async (otp: string, _mobile: string): Promise<boolean> => {
+    if (!adminConfirmationRef.current) return false;
+    try {
+      await adminConfirmationRef.current.confirm(otp);
       setIsAdminAuthenticated(true);
       localStorage.setItem('kalyani_admin_auth', 'true');
       setAdminOtpSent(false);
+      adminConfirmationRef.current = null;
       return true;
+    } catch {
+      return false;
     }
-    return false;
   }, []);
 
   const adminLogout = useCallback(() => {
     setIsAdminAuthenticated(false);
     localStorage.removeItem('kalyani_admin_auth');
+    resetRecaptcha();
+    adminConfirmationRef.current = null;
   }, []);
 
   // Menu Items CRUD

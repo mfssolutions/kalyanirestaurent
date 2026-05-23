@@ -140,6 +140,8 @@ export default function AuthModal() {
             <button type="submit" className="auth-submit-btn">Complete Signup</button>
           </form>
         )}
+
+        <div id="recaptcha-container"></div>
       </div>
     </div>
   );

@@ -91,6 +91,7 @@ export default function AdminLogin() {
             </button>
           </form>
         )}
+        <div id="recaptcha-container"></div>
       </div>
     </div>
   );
