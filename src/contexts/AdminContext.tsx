@@ -62,6 +62,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   });
   const [adminOtpSent, setAdminOtpSent] = useState(false);
 
+  const reportError = (label: string, error: { message?: string } | null) => {
+    if (!error) return;
+    console.error(`${label}:`, error.message);
+    if (typeof window !== 'undefined') alert(`${label}: ${error.message || 'unknown error'}`);
+  };
+
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [banners, setBanners] = useState<HeroBanner[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -210,21 +216,21 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const addMenuItem = useCallback((item: MenuItem) => {
     setMenuItems(prev => [...prev, item]);
     supabase.from('menu_items').insert(fromMenuItem(item)).then(({ error }) => {
-      if (error) console.error('Add menu item error:', error.message);
+      reportError('Add menu item', error);
     });
   }, []);
 
   const updateMenuItem = useCallback((item: MenuItem) => {
     setMenuItems(prev => prev.map(m => m.id === item.id ? item : m));
     supabase.from('menu_items').update(fromMenuItem(item)).eq('id', item.id).then(({ error }) => {
-      if (error) console.error('Update menu item error:', error.message);
+      reportError('Update menu item', error);
     });
   }, []);
 
   const deleteMenuItem = useCallback((id: string) => {
     setMenuItems(prev => prev.filter(m => m.id !== id));
     supabase.from('menu_items').delete().eq('id', id).then(({ error }) => {
-      if (error) console.error('Delete menu item error:', error.message);
+      reportError('Delete menu item', error);
     });
   }, []);
 
@@ -232,21 +238,21 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const addBanner = useCallback((banner: HeroBanner) => {
     setBanners(prev => [...prev, banner]);
     supabase.from('banners').insert(fromBanner(banner)).then(({ error }) => {
-      if (error) console.error('Add banner error:', error.message);
+      reportError('Add banner', error);
     });
   }, []);
 
   const updateBanner = useCallback((banner: HeroBanner) => {
     setBanners(prev => prev.map(b => b.id === banner.id ? banner : b));
     supabase.from('banners').update(fromBanner(banner)).eq('id', banner.id).then(({ error }) => {
-      if (error) console.error('Update banner error:', error.message);
+      reportError('Update banner', error);
     });
   }, []);
 
   const deleteBanner = useCallback((id: string) => {
     setBanners(prev => prev.filter(b => b.id !== id));
     supabase.from('banners').delete().eq('id', id).then(({ error }) => {
-      if (error) console.error('Delete banner error:', error.message);
+      reportError('Delete banner', error);
     });
   }, []);
 
@@ -254,21 +260,21 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const addOffer = useCallback((offer: Offer) => {
     setOffers(prev => [...prev, offer]);
     supabase.from('offers').insert(fromOffer(offer)).then(({ error }) => {
-      if (error) console.error('Add offer error:', error.message);
+      reportError('Add offer', error);
     });
   }, []);
 
   const updateOffer = useCallback((offer: Offer) => {
     setOffers(prev => prev.map(o => o.id === offer.id ? offer : o));
     supabase.from('offers').update(fromOffer(offer)).eq('id', offer.id).then(({ error }) => {
-      if (error) console.error('Update offer error:', error.message);
+      reportError('Update offer', error);
     });
   }, []);
 
   const deleteOffer = useCallback((id: string) => {
     setOffers(prev => prev.filter(o => o.id !== id));
     supabase.from('offers').delete().eq('id', id).then(({ error }) => {
-      if (error) console.error('Delete offer error:', error.message);
+      reportError('Delete offer', error);
     });
   }, []);
 
@@ -276,21 +282,21 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const addCategory = useCallback((cat: Category) => {
     setCategories(prev => [...prev, cat]);
     supabase.from('categories').insert(fromCategory(cat)).then(({ error }) => {
-      if (error) console.error('Add category error:', error.message);
+      reportError('Add category', error);
     });
   }, []);
 
   const updateCategory = useCallback((cat: Category) => {
     setCategories(prev => prev.map(c => c.id === cat.id ? cat : c));
     supabase.from('categories').update(fromCategory(cat)).eq('id', cat.id).then(({ error }) => {
-      if (error) console.error('Update category error:', error.message);
+      reportError('Update category', error);
     });
   }, []);
 
   const deleteCategory = useCallback((id: string) => {
     setCategories(prev => prev.filter(c => c.id !== id));
     supabase.from('categories').delete().eq('id', id).then(({ error }) => {
-      if (error) console.error('Delete category error:', error.message);
+      reportError('Delete category', error);
     });
   }, []);
 
@@ -341,21 +347,21 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const addRider = useCallback((rider: Rider) => {
     setRiders(prev => [rider, ...prev]);
     supabase.from('riders').insert(fromRider(rider)).then(({ error }) => {
-      if (error) console.error('Add rider error:', error.message);
+      reportError('Add rider', error);
     });
   }, []);
 
   const updateRider = useCallback((rider: Rider) => {
     setRiders(prev => prev.map(r => r.id === rider.id ? rider : r));
     supabase.from('riders').update(fromRider(rider)).eq('id', rider.id).then(({ error }) => {
-      if (error) console.error('Update rider error:', error.message);
+      reportError('Update rider', error);
     });
   }, []);
 
   const deleteRider = useCallback((id: string) => {
     setRiders(prev => prev.filter(r => r.id !== id));
     supabase.from('riders').delete().eq('id', id).then(({ error }) => {
-      if (error) console.error('Delete rider error:', error.message);
+      reportError('Delete rider', error);
     });
   }, []);
 
