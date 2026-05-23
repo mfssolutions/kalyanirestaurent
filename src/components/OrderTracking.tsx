@@ -231,8 +231,8 @@ export default function OrderTracking() {
 
   return (
     <div className="tracking">
-      <button className="tracking__back" onClick={() => navigate('/')}>
-        <ArrowLeft size={18} /> Back to Home
+      <button className="tracking__back" onClick={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }}>
+        <ArrowLeft size={18} /> Back
       </button>
 
       <div className="tracking__header">

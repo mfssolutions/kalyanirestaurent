@@ -103,7 +103,7 @@ export default function Checkout() {
   return (
     <div className="checkout">
       <div className="checkout__header">
-        <button className="checkout__back" onClick={() => navigate('/')}><ArrowLeft size={20} /> Back to Menu</button>
+        <button className="checkout__back" onClick={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }}><ArrowLeft size={20} /> Back</button>
         <h1>Checkout</h1>
       </div>
 

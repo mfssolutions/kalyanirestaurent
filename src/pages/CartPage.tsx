@@ -20,7 +20,7 @@ export default function CartPage() {
   return (
     <div className="cart-page">
       <div className="cart-page__topbar">
-        <button className="cart-page__back" onClick={() => navigate(-1)} aria-label="Back">
+        <button className="cart-page__back" onClick={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }} aria-label="Back">
           <ArrowLeft size={22} />
         </button>
         <h1>Your Cart {totalItems > 0 && <span className="cart-page__count">({totalItems})</span>}</h1>

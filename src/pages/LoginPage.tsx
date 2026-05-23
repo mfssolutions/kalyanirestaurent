@@ -52,10 +52,15 @@ export default function LoginPage() {
     navigate(redirectTo, { replace: true });
   };
 
+  const handleBack = () => {
+    if (window.history.length > 1) navigate(-1);
+    else navigate('/');
+  };
+
   return (
     <div className="auth-page">
       <div className="auth-page__topbar">
-        <button className="auth-page__back" onClick={() => navigate('/')} aria-label="Back">
+        <button className="auth-page__back" onClick={handleBack} aria-label="Back">
           <ArrowLeft size={22} />
         </button>
         <h1>Login</h1>
