@@ -39,6 +39,7 @@ export interface Address {
   id: string;
   label: string;
   fullAddress: string;
+  pincode?: string;
   lat?: number;
   lng?: number;
 }

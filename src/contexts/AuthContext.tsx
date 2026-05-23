@@ -1,29 +1,35 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import type { ConfirmationResult } from 'firebase/auth';
 import { signOut } from 'firebase/auth';
-import type { User } from '../types';
+import type { User, Address } from '../types';
 import { supabase } from '../lib/supabase';
 import { firebaseAuth, sendPhoneOtp, resetRecaptcha } from '../lib/firebase';
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  isAuthModalOpen: boolean;
-  pendingMobile: string | null;
-  otpSent: boolean;
-  otpVerified: boolean;
-  authStep: 'phone' | 'otp' | 'name';
   loading: boolean;
 }
 
+interface VerifyResult {
+  success: boolean;
+  isNewUser?: boolean;
+  uid?: string;
+  error?: string;
+}
+
+interface SignupPayload {
+  name: string;
+  address: Omit<Address, 'id'>;
+}
+
 interface AuthContextType extends AuthState {
-  openAuthModal: () => void;
-  closeAuthModal: () => void;
-  sendOtp: (mobile: string) => Promise<{ success: boolean; error?: string }>;
-  verifyOtp: (otp: string) => Promise<{ success: boolean; isNewUser?: boolean; error?: string }>;
-  completeSignup: (name: string) => void;
+  pendingMobile: string | null;
+  sendOtp: (mobile: string, containerId?: string) => Promise<{ success: boolean; error?: string }>;
+  verifyOtp: (otp: string) => Promise<VerifyResult>;
+  completeSignup: (payload: SignupPayload) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  resetAuthFlow: () => void;
+  resetAuthFlow: (containerId?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -35,30 +41,26 @@ export const useAuth = () => {
 };
 
 const STORAGE_KEY = 'kalyani_user';
+const DEFAULT_RECAPTCHA = 'recaptcha-customer';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
     isAuthenticated: false,
-    isAuthModalOpen: false,
-    pendingMobile: null,
-    otpSent: false,
-    otpVerified: false,
-    authStep: 'phone',
     loading: true,
   });
+  const [pendingMobile, setPendingMobile] = useState<string | null>(null);
 
-  // Holds the active Firebase confirmation between sendOtp and verifyOtp
   const confirmationRef = useRef<ConfirmationResult | null>(null);
   const pendingUidRef = useRef<string | null>(null);
+  const lastContainerRef = useRef<string>(DEFAULT_RECAPTCHA);
 
-  // Restore session from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const user = JSON.parse(saved) as User;
-        setState(s => ({ ...s, user, isAuthenticated: true, loading: false }));
+        setState({ user, isAuthenticated: true, loading: false });
       } catch {
         localStorage.removeItem(STORAGE_KEY);
         setState(s => ({ ...s, loading: false }));
@@ -69,43 +71,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (state.user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.user));
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-    }
+    if (state.user) localStorage.setItem(STORAGE_KEY, JSON.stringify(state.user));
+    else localStorage.removeItem(STORAGE_KEY);
   }, [state.user]);
 
-  const openAuthModal = useCallback(() => {
-    setState(s => ({ ...s, isAuthModalOpen: true, authStep: 'phone', otpSent: false, otpVerified: false, loading: false }));
-  }, []);
-
-  const closeAuthModal = useCallback(() => {
-    resetRecaptcha('recaptcha-customer');
-    confirmationRef.current = null;
-    setState(s => ({ ...s, isAuthModalOpen: false, pendingMobile: null, otpSent: false, otpVerified: false, authStep: 'phone', loading: false }));
-  }, []);
-
-  const sendOtp = useCallback(async (mobile: string): Promise<{ success: boolean; error?: string }> => {
-    setState(s => ({ ...s, loading: true }));
+  const sendOtp = useCallback(async (mobile: string, containerId = DEFAULT_RECAPTCHA) => {
+    lastContainerRef.current = containerId;
     try {
       const phone = `+91${mobile}`;
-      const confirmation = await sendPhoneOtp(phone, 'recaptcha-customer');
+      const confirmation = await sendPhoneOtp(phone, containerId);
       confirmationRef.current = confirmation;
-      setState(s => ({ ...s, pendingMobile: mobile, otpSent: true, authStep: 'otp', loading: false }));
+      setPendingMobile(mobile);
       return { success: true };
     } catch (err) {
-      const message = (err as Error).message || 'Failed to send OTP';
-      resetRecaptcha('recaptcha-customer');
-      setState(s => ({ ...s, loading: false }));
-      return { success: false, error: message };
+      resetRecaptcha(containerId);
+      return { success: false, error: (err as Error).message || 'Failed to send OTP' };
     }
   }, []);
 
-  const verifyOtp = useCallback(async (otp: string): Promise<{ success: boolean; isNewUser?: boolean; error?: string }> => {
-    setState(s => ({ ...s, loading: true }));
+  const verifyOtp = useCallback(async (otp: string): Promise<VerifyResult> => {
     if (!confirmationRef.current) {
-      setState(s => ({ ...s, loading: false }));
       return { success: false, error: 'Session expired. Please request OTP again.' };
     }
     try {
@@ -120,36 +105,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (profile && profile.name) {
-        const existingUser: User = {
+        const user: User = {
           id: profile.id,
           name: profile.name,
           mobile: profile.phone,
           addresses: profile.addresses || [],
         };
-        setState(s => ({ ...s, user: existingUser, isAuthenticated: true, otpVerified: true, isAuthModalOpen: false, loading: false }));
-        return { success: true, isNewUser: false };
+        setState({ user, isAuthenticated: true, loading: false });
+        return { success: true, isNewUser: false, uid };
       }
 
-      setState(s => ({ ...s, otpVerified: true, authStep: 'name', loading: false }));
-      return { success: true, isNewUser: true };
+      return { success: true, isNewUser: true, uid };
     } catch (err) {
-      setState(s => ({ ...s, loading: false }));
       return { success: false, error: (err as Error).message || 'Invalid OTP' };
     }
   }, []);
 
-  const completeSignup = useCallback(async (name: string) => {
+  const completeSignup = useCallback(async ({ name, address }: SignupPayload) => {
     const uid = pendingUidRef.current || firebaseAuth.currentUser?.uid;
-    if (!uid) {
-      console.error('No authenticated Firebase user found during signup');
-      return;
+    if (!uid || !pendingMobile) {
+      return { success: false, error: 'Session expired. Please start again.' };
     }
-
+    const newAddress: Address = {
+      id: `addr_${Date.now()}`,
+      label: address.label || 'Home',
+      fullAddress: address.fullAddress,
+      pincode: address.pincode,
+      lat: address.lat,
+      lng: address.lng,
+    };
     const newUser: User = {
       id: uid,
       name,
-      mobile: state.pendingMobile!,
-      addresses: [],
+      mobile: pendingMobile,
+      addresses: [newAddress],
     };
 
     const { error } = await supabase
@@ -161,40 +150,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         addresses: newUser.addresses,
       });
 
-    if (error) {
-      console.error('Profile upsert error:', error.message);
-      return;
-    }
-
-    setState(s => ({ ...s, user: newUser, isAuthenticated: true, isAuthModalOpen: false }));
-  }, [state.pendingMobile]);
+    if (error) return { success: false, error: error.message };
+    setState({ user: newUser, isAuthenticated: true, loading: false });
+    return { success: true };
+  }, [pendingMobile]);
 
   const logout = useCallback(async () => {
     localStorage.removeItem(STORAGE_KEY);
     try { await signOut(firebaseAuth); } catch { /* ignore */ }
-    resetRecaptcha('recaptcha-customer');
+    resetRecaptcha(lastContainerRef.current);
     confirmationRef.current = null;
     pendingUidRef.current = null;
-    setState({
-      user: null,
-      isAuthenticated: false,
-      isAuthModalOpen: false,
-      pendingMobile: null,
-      otpSent: false,
-      otpVerified: false,
-      authStep: 'phone',
-      loading: false,
-    });
+    setPendingMobile(null);
+    setState({ user: null, isAuthenticated: false, loading: false });
   }, []);
 
-  const resetAuthFlow = useCallback(() => {
-    resetRecaptcha('recaptcha-customer');
+  const resetAuthFlow = useCallback((containerId = DEFAULT_RECAPTCHA) => {
+    resetRecaptcha(containerId);
     confirmationRef.current = null;
-    setState(s => ({ ...s, authStep: 'phone', otpSent: false, otpVerified: false, pendingMobile: null, loading: false }));
+    setPendingMobile(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, openAuthModal, closeAuthModal, sendOtp, verifyOtp, completeSignup, logout, resetAuthFlow }}>
+    <AuthContext.Provider value={{
+      ...state,
+      pendingMobile,
+      sendOtp,
+      verifyOtp,
+      completeSignup,
+      logout,
+      resetAuthFlow,
+    }}>
       {children}
     </AuthContext.Provider>
   );

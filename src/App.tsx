@@ -12,6 +12,10 @@ import OrdersPage from './pages/OrdersPage';
 import AdminPage from './pages/AdminPage';
 import RiderPage from './pages/RiderPage';
 import BillingPage from './pages/BillingPage';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
+import CartPage from './pages/CartPage';
+import PageLoader from './components/PageLoader';
 
 function App() {
   return (
@@ -22,13 +26,18 @@ function App() {
             <CartProvider>
               <OrderProvider>
                 <RiderProvider>
+                  <PageLoader />
                   <Routes>
                     <Route path="/" element={<HomePage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/signup" element={<SignupPage />} />
+                    <Route path="/cart" element={<CartPage />} />
                     <Route path="/checkout" element={<CheckoutPage />} />
                     <Route path="/order/:orderId" element={<OrderTrackingPage />} />
                     <Route path="/orders" element={<OrdersPage />} />
                     <Route path="/admin" element={<AdminPage />} />
                     <Route path="/rider" element={<RiderPage />} />
+                    <Route path="/biller" element={<BillingPage />} />
                     <Route path="/billing" element={<BillingPage />} />
                   </Routes>
                 </RiderProvider>

@@ -5,9 +5,7 @@ import FoodMenu from '../components/FoodMenu';
 import AboutUs from '../components/AboutUs';
 import Footer from '../components/Footer';
 import MobileNavbar from '../components/MobileNavbar';
-import Cart from '../components/Cart';
 import CartButton from '../components/CartButton';
-import AuthModal from '../components/AuthModal';
 
 const HomePage = () => {
   const [location, setLocation] = useState<string | null>(null);
@@ -56,8 +54,6 @@ const HomePage = () => {
       <Footer />
       <MobileNavbar />
       <CartButton />
-      <Cart />
-      <AuthModal />
     </div>
   );
 };

@@ -14,8 +14,8 @@ const Header: React.FC<HeaderProps> = ({ location }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const { isAuthenticated, user, openAuthModal, logout } = useAuth();
-  const { totalItems, toggleCart } = useCart();
+  const { isAuthenticated, user, logout } = useAuth();
+  const { totalItems } = useCart();
   const { get } = useConfig();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -60,10 +60,10 @@ const Header: React.FC<HeaderProps> = ({ location }) => {
             <a href="#about">About Us</a>
             <a href="#menu">Menu</a>
             {totalItems > 0 && (
-              <button className="header-cart-btn" onClick={toggleCart}>
+              <Link to="/cart" className="header-cart-btn">
                 <ShoppingCart size={18} />
                 <span className="header-cart-count">{totalItems}</span>
-              </button>
+              </Link>
             )}
             {isAuthenticated ? (
               <div className="header-profile" ref={dropdownRef}>
@@ -90,16 +90,16 @@ const Header: React.FC<HeaderProps> = ({ location }) => {
                 )}
               </div>
             ) : (
-              <button onClick={openAuthModal} className="login-btn">Login</button>
+              <Link to="/login" className="login-btn">Login</Link>
             )}
           </nav>
 
           <div className="header-mobile-right">
             {totalItems > 0 && (
-              <button className="header-cart-btn mobile" onClick={toggleCart}>
+              <Link to="/cart" className="header-cart-btn mobile">
                 <ShoppingCart size={20} />
                 <span className="header-cart-count">{totalItems}</span>
-              </button>
+              </Link>
             )}
             <button
               className="hamburger"
@@ -130,7 +130,7 @@ const Header: React.FC<HeaderProps> = ({ location }) => {
                 </button>
               </>
             ) : (
-              <button onClick={openAuthModal}>Login</button>
+              <Link to="/login">Login</Link>
             )}
           </nav>
         )}
