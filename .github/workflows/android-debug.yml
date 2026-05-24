@@ -1,0 +1,68 @@
+name: Android Debug Build (PR)
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  debug-build:
+    name: Debug APK (smoke test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      # Fall back to placeholder values if PR is from a fork (no secret access).
+      # The web build will still succeed; runtime API calls would fail, but we
+      # only care that gradle assembles a valid APK.
+      VITE_FIREBASE_API_KEY:            ${{ secrets.VITE_FIREBASE_API_KEY || 'ci-placeholder' }}
+      VITE_FIREBASE_AUTH_DOMAIN:        ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN || 'ci.firebaseapp.com' }}
+      VITE_FIREBASE_PROJECT_ID:         ${{ secrets.VITE_FIREBASE_PROJECT_ID || 'ci-project' }}
+      VITE_FIREBASE_STORAGE_BUCKET:     ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET || 'ci.appspot.com' }}
+      VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID || '0' }}
+      VITE_FIREBASE_APP_ID:             ${{ secrets.VITE_FIREBASE_APP_ID || '1:0:android:0' }}
+      VITE_SUPABASE_URL:                ${{ secrets.VITE_SUPABASE_URL || 'https://example.supabase.co' }}
+      VITE_SUPABASE_ANON_KEY:           ${{ secrets.VITE_SUPABASE_ANON_KEY || 'placeholder' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-35 build-tools;35.0.0 platform-tools'
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npx cap sync android
+
+      - name: Build debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kalyani-kitchen-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
