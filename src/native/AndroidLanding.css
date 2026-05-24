@@ -1,0 +1,188 @@
+/* Android-only landing splash. Not loaded on web (gated by Capacitor.isNativePlatform). */
+
+.al-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: linear-gradient(160deg, #1e6b3c 0%, #185a32 50%, #0f3d22 100%);
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.al-decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+}
+.al-decor span {
+  position: absolute;
+  opacity: 0.18;
+}
+.al-decor .e1 { top: 56px;  right: 32px; font-size: 48px; }
+.al-decor .e2 { top: 144px; left:  20px; font-size: 30px; }
+.al-decor .e3 { top: 224px; right: 64px; font-size: 22px; opacity: 0.13; }
+.al-decor .e4 { bottom: 208px; left: 32px;  font-size: 38px; }
+.al-decor .e5 { bottom: 288px; right: 24px; font-size: 28px; opacity: 0.13; }
+
+.al-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.al-logo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.al-logo-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: #fc6011;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+.al-brand {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: #fff;
+}
+.al-tagline {
+  color: #86efac;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 0 0 32px;
+}
+
+.al-hero-wrap {
+  position: relative;
+  width: 100%;
+}
+.al-hero-glow {
+  position: absolute;
+  inset: -16px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 28px;
+  filter: blur(28px);
+}
+.al-hero-img {
+  position: relative;
+  width: 100%;
+  height: 208px;
+  object-fit: cover;
+  border-radius: 24px;
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.45);
+  display: block;
+}
+.al-live-badge {
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border-radius: 16px;
+  padding: 8px 16px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.al-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: al-pulse 1.6s ease-in-out infinite;
+}
+@keyframes al-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.55; transform: scale(1.25); }
+}
+.al-live-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.al-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 40px;
+}
+.al-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  padding: 8px 16px;
+}
+.al-pill-icon { font-size: 14px; line-height: 1; }
+.al-pill-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.al-cta {
+  position: relative;
+  z-index: 1;
+  padding: 0 20px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.al-btn {
+  width: 100%;
+  border: 0;
+  border-radius: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.al-btn:active { transform: scale(0.96); }
+.al-btn-primary {
+  background: #fc6011;
+  color: #fff;
+  font-size: 16px;
+  padding: 16px;
+  box-shadow: 0 14px 28px rgba(252, 96, 17, 0.45);
+}
+.al-btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 14px;
+  padding: 14px;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+.al-btn-secondary .al-link {
+  color: #ffc72c;
+  font-weight: 700;
+  margin-left: 2px;
+}

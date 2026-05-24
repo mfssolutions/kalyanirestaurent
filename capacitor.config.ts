@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.kalyanikitchen.app',
-  appName: 'kalyani Kitchen',
+  appName: 'Kalyani Kitchen',
   webDir: 'dist',
   // Bundle the built web assets inside the APK (offline-capable shell).
   // To point at a live server during development, set

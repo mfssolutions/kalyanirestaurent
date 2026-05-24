@@ -17,6 +17,7 @@ import SignupPage from './pages/SignupPage';
 import CartPage from './pages/CartPage';
 import ProfilePage from './pages/ProfilePage';
 import PageLoader from './components/PageLoader';
+import NativeLandingGate from './native/NativeLandingGate';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
               <OrderProvider>
                 <RiderProvider>
                   <PageLoader />
+                  <NativeLandingGate />
                   <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/login" element={<LoginPage />} />
