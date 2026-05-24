@@ -124,6 +124,35 @@ jobs:
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
           EOF
 
+      - name: Print release signing fingerprints (REGISTER THESE IN FIREBASE)
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          echo "=================================================================="
+          echo "  RELEASE SIGNING FINGERPRINTS for com.kalyanikitchen.app"
+          echo "  Copy SHA1 & SHA256 below into Firebase Console:"
+          echo "  Project Settings → Your Android app → Add fingerprint"
+          echo "=================================================================="
+          keytool -list -v -keystore android/app/release.jks \
+            -alias "$KEY_ALIAS" -storepass "$KS_PASS" -keypass "$KS_PASS" \
+            | grep -E "SHA1:|SHA-1:|SHA256:|SHA-256:" || true
+          echo "=================================================================="
+          SHA1_KS=$(keytool -list -v -keystore android/app/release.jks \
+            -alias "$KEY_ALIAS" -storepass "$KS_PASS" -keypass "$KS_PASS" \
+            | grep -E "SHA1:" | head -1 | awk '{print $2}' | tr -d ':' | tr A-F a-f)
+          SHA1_GS=$(node -e "const j=require('./android/app/google-services.json');\
+            const c=j.client.find(x=>x.client_info.android_client_info.package_name==='com.kalyanikitchen.app');\
+            const list=(c&&c.oauth_client)||[];\
+            console.log(list.map(o=>(o.android_info&&o.android_info.certificate_hash)||'').filter(Boolean).join(' '))")
+          echo "Keystore SHA1 (no colons, lowercase): $SHA1_KS"
+          echo "google-services.json registered SHA1 hashes: ${SHA1_GS:-<none>}"
+          if [ -z "$SHA1_GS" ] || ! echo " $SHA1_GS " | grep -q " $SHA1_KS "; then
+            echo "::warning::Release SHA1 is NOT registered in google-services.json. Firebase Phone Auth will fail with 'missing valid app identifier'. Register the SHA1 above in Firebase Console, re-download google-services.json, and update the GOOGLE_SERVICES_JSON_BASE64 secret."
+          else
+            echo "OK: release SHA1 is registered in google-services.json"
+          fi
+
       - name: Resolve version
         id: version
         run: |
