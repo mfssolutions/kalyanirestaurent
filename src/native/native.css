@@ -1,0 +1,334 @@
+/* ============================================================================
+ * Android-only theme overrides. All selectors are scoped under `body.kk-native`
+ * so this file is a complete no-op for the web build.
+ * Goal: make the existing /login, /signup, OTP pages match the green / orange
+ * mockup without touching any JSX, routes, or auth logic.
+ * ============================================================================ */
+
+/* ---- Auth pages (login + signup share the same DOM) ---------------------- */
+
+body.kk-native .auth-page {
+  background: linear-gradient(160deg, #1e6b3c 0%, #185a32 55%, #0f3d22 100%);
+  min-height: 100vh;
+  padding: 0;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Decorative emojis behind the header — pure CSS, no JSX change. */
+body.kk-native .auth-page::before,
+body.kk-native .auth-page::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.15;
+  font-size: 40px;
+}
+body.kk-native .auth-page::before {
+  content: '🍕';
+  top: 70px;
+  right: 28px;
+}
+body.kk-native .auth-page::after {
+  content: '🍔';
+  top: 150px;
+  left: 24px;
+  font-size: 30px;
+}
+
+/* Top bar lays out as a column so the injected ::after subtitle stacks below h1 */
+body.kk-native .auth-page__topbar {
+  background: transparent !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+  padding: calc(env(safe-area-inset-top, 0px) + 18px) 22px 24px !important;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  position: relative;
+  z-index: 2;
+}
+body.kk-native .auth-page__back {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+body.kk-native .auth-page__back:hover,
+body.kk-native .auth-page__back:active {
+  background: rgba(255, 255, 255, 0.25) !important;
+}
+body.kk-native .auth-page__back svg { color: #fff !important; }
+
+body.kk-native .auth-page__topbar h1 {
+  color: #ffffff !important;
+  font-size: 24px !important;
+  font-weight: 900 !important;
+  margin: 14px 0 4px !important;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+/* Inject a green-tinted helper subtitle under the topbar h1.
+   Different text per route via [data-pathname] on body (set in JS). */
+body.kk-native[data-path="/signup"] .auth-page__topbar h1::after {
+  content: ' \1F389';
+}
+body.kk-native[data-path="/login"] .auth-page__topbar h1::after {
+  content: ' \1F44B';
+}
+body.kk-native .auth-page__topbar h1::before {
+  content: '';
+  display: block;
+}
+
+/* Subtitle line under the big white title */
+body.kk-native .auth-page__topbar::after {
+  content: 'Welcome back to Kalyani Kitchen';
+  display: block;
+  color: #86efac;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 2px;
+  width: 100%;
+}
+body.kk-native[data-path="/signup"] .auth-page__topbar::after {
+  content: 'Join the Kalyani Kitchen family';
+}
+
+/* Hide the small in-topbar logo on native; we show the brand inside the body. */
+body.kk-native .auth-page__logo { display: none !important; }
+
+/* Body wrapper: lets the white sheet stretch full width with rounded top */
+body.kk-native .auth-page__body {
+  padding: 0 !important;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 80px);
+}
+
+/* Hero text — drawn before the white sheet starts */
+body.kk-native .auth-page__body::before {
+  content: '';
+  display: block;
+  padding: 0 24px 24px;
+}
+
+/* The card becomes a full-width white sheet with rounded top corners */
+body.kk-native .auth-page__card {
+  background: #ffffff !important;
+  border-radius: 32px 32px 0 0 !important;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.18) !important;
+  padding: 28px 22px calc(env(safe-area-inset-bottom, 0px) + 28px) !important;
+  margin: 16px 0 0 !important;
+  max-width: none !important;
+  width: 100% !important;
+  flex: 1;
+  position: relative;
+  z-index: 2;
+}
+
+/* Brand mark above title */
+body.kk-native .auth-page__brand-logo {
+  display: none !important;
+}
+
+/* Title: dark, bold; moved out of green topbar into card top.
+   We use a pseudo to inject the green pre-title above the card. */
+body.kk-native .auth-page__card::before {
+  content: '';
+  position: absolute;
+  top: -76px;
+  left: 22px;
+  right: 22px;
+  height: 60px;
+  pointer-events: none;
+}
+
+body.kk-native .auth-page__title {
+  font-size: 22px !important;
+  font-weight: 900 !important;
+  color: #1f2937 !important;
+  margin: 4px 0 6px !important;
+  text-align: left !important;
+}
+body.kk-native .auth-page__subtitle {
+  color: #6b7280 !important;
+  font-size: 13px !important;
+  text-align: left !important;
+  margin: 0 0 22px !important;
+}
+
+/* Form fields */
+body.kk-native .auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+body.kk-native .auth-field {
+  background: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 14px !important;
+  padding: 14px 16px !important;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+body.kk-native .auth-field:focus-within {
+  border-color: #fc6011 !important;
+  background: #fff !important;
+}
+body.kk-native .auth-field svg { color: #9ca3af !important; }
+body.kk-native .auth-field input,
+body.kk-native .auth-field textarea {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  flex: 1;
+  font-size: 14px !important;
+  color: #1f2937 !important;
+  font-weight: 500;
+}
+body.kk-native .auth-field input::placeholder,
+body.kk-native .auth-field textarea::placeholder {
+  color: #9ca3af !important;
+}
+body.kk-native .auth-prefix {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #374151 !important;
+}
+
+/* Primary CTA — orange pill */
+body.kk-native .auth-submit {
+  background: #fc6011 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2px;
+  box-shadow: 0 10px 22px rgba(252, 96, 17, 0.35) !important;
+  margin-top: 6px;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+body.kk-native .auth-submit:disabled {
+  background: #e5e7eb !important;
+  color: #9ca3af !important;
+  box-shadow: none !important;
+}
+body.kk-native .auth-submit:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+/* Secondary actions */
+body.kk-native .auth-secondary {
+  background: transparent !important;
+  color: #185a32 !important;
+  border: none !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  padding: 10px !important;
+  text-align: center;
+}
+body.kk-native .auth-resend {
+  background: #f9fafb !important;
+  color: #fc6011 !important;
+  border: 1px solid #fee0d2 !important;
+  border-radius: 12px !important;
+  padding: 10px !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+body.kk-native .auth-resend:disabled {
+  background: #f3f4f6 !important;
+  color: #9ca3af !important;
+  border-color: #e5e7eb !important;
+}
+
+/* Footer link */
+body.kk-native .auth-footer-link {
+  text-align: center;
+  font-size: 13px !important;
+  color: #6b7280 !important;
+  margin: 14px 0 0 !important;
+}
+body.kk-native .auth-footer-link a {
+  color: #fc6011 !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+}
+
+/* "or" divider */
+body.kk-native .auth-divider {
+  color: #9ca3af !important;
+  font-size: 11px !important;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin: 10px 0 !important;
+}
+body.kk-native .auth-divider::before,
+body.kk-native .auth-divider::after {
+  background: #e5e7eb !important;
+}
+
+/* Location button (signup) */
+body.kk-native .location-btn {
+  background: #f0fdf4 !important;
+  color: #185a32 !important;
+  border: 1px solid #bbf7d0 !important;
+  border-radius: 12px !important;
+  padding: 12px !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+}
+body.kk-native .location-success {
+  color: #16a34a !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+/* Error pill */
+body.kk-native .auth-error {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #fecaca !important;
+  border-radius: 10px;
+  padding: 10px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600;
+  margin: 0 !important;
+}
+
+/* Inject a green pre-card hero block above the white sheet so the screen
+   matches the mockup. Already handled via topbar h1 + ::after subtitle. */
+body.kk-native .auth-page__card {
+  margin-top: 0 !important;
+}
+body.kk-native .auth-page__body {
+  padding-top: 0 !important;
+  position: relative;
+}
+
+/* ---- Status bar safe area for native shell ------------------------------- */
+
+body.kk-native {
+  background: #1e6b3c;
+}
