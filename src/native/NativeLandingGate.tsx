@@ -33,6 +33,18 @@ export default function NativeLandingGate() {
     if (!isNative && show) setShow(false);
   }, [isNative, show]);
 
+  // Re-check the seen flag when we land back on '/' (e.g. user pressed Back
+  // from Login/Signup which cleared the flag — we should show the landing
+  // page again instead of falling through to the underlying HomePage).
+  useEffect(() => {
+    if (!isNative) return;
+    if (location.pathname !== '/' && location.pathname !== '') return;
+    try {
+      const seen = localStorage.getItem(SEEN_KEY) === '1';
+      setShow(!seen);
+    } catch { /* ignore */ }
+  }, [isNative, location.pathname]);
+
   if (!isNative || !show) return null;
 
   // Only overlay at the app root — if the user navigated elsewhere (deep link,

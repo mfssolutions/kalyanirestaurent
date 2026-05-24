@@ -48,14 +48,22 @@
   margin-bottom: 6px;
 }
 .al-logo-badge {
-  width: 44px;
-  height: 44px;
-  border-radius: 16px;
-  background: #fc6011;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  padding: 4px;
+}
+.al-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 .al-brand {
   font-size: 28px;

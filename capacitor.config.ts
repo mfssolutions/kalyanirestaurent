@@ -26,9 +26,10 @@ const config: CapacitorConfig = {
       backgroundColor: '#ffffff',
     },
     FirebaseAuthentication: {
-      // Skip the native Auth SDK provider list we don't use; phone is enough.
+      // Use the @capacitor-firebase/authentication phone provider on native.
+      // The literal provider string must be 'phone' (NOT 'phone.provider').
       skipNativeAuth: false,
-      providers: ['phone.provider'],
+      providers: ['phone'],
     },
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],

@@ -1,4 +1,3 @@
-import { Flame } from 'lucide-react';
 import './AndroidLanding.css';
 
 /**
@@ -31,7 +30,7 @@ export default function AndroidLanding({
       <div className="al-body">
         <div className="al-logo-row">
           <div className="al-logo-badge">
-            <Flame color="#fff" size={22} strokeWidth={2.5} />
+            <img src="/logo.png" alt="Kalyani Kitchen" className="al-logo-img" />
           </div>
           <span className="al-brand">Kalyani Kitchen</span>
         </div>

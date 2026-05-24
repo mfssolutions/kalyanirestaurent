@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Phone, Shield, User as UserIcon, MapPin, Home, Loader, Locate, RotateCw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useResendTimer } from '../lib/useResendTimer';
+import { isNative, resetNativeLanding } from '../native/initNative';
 import './AuthPages.css';
 
 type Step = 'phone' | 'otp' | 'details';
@@ -122,6 +123,11 @@ export default function SignupPage() {
   };
 
   const handleBack = () => {
+    if (isNative()) {
+      resetNativeLanding();
+      navigate('/', { replace: true });
+      return;
+    }
     if (window.history.length > 1) navigate(-1);
     else navigate('/');
   };

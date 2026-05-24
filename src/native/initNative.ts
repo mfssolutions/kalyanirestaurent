@@ -7,6 +7,22 @@
 import { Capacitor } from '@capacitor/core';
 import './native.css';
 
+export const NATIVE_LANDING_SEEN_KEY = 'kk_native_landing_seen_v1';
+
+/** True only when running inside the Capacitor (Android) shell. */
+export const isNative = (): boolean => Capacitor.isNativePlatform();
+
+/**
+ * Reset the "landing screen seen" flag so the native Get Started / Login
+ * landing page shows again on next render. Web is unaffected because the gate
+ * never mounts off-native anyway.
+ */
+export function resetNativeLanding(): void {
+  try {
+    localStorage.removeItem(NATIVE_LANDING_SEEN_KEY);
+  } catch { /* ignore */ }
+}
+
 export function initNative() {
   if (!Capacitor.isNativePlatform()) return;
 
