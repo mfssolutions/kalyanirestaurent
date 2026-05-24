@@ -60,3 +60,15 @@
   margin: 12px 0 0;
   line-height: 1.45;
 }
+
+.gpsgate-btn--secondary {
+  margin-top: 10px;
+  background: #ffffff;
+  color: #0d3b1e;
+  border: 1.5px solid #d1d5db;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.gpsgate-btn--secondary:active { background: #f3f4f6; }

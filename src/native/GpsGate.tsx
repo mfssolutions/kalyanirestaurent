@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { MapPin } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { MapPin, Settings as SettingsIcon } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { App as CapApp } from '@capacitor/app';
@@ -7,22 +7,27 @@ import './GpsGate.css';
 
 /**
  * Mandatory GPS gate for the native (Android) build.
- * Renders a full-screen blocking overlay until the user grants location
- * permission. Re-checks permission whenever the app returns from background
- * so a Settings round-trip will dismiss the gate automatically.
  *
- * The web build never renders this (gated by Capacitor.isNativePlatform()).
+ * Two-step UX: first tap triggers the Android runtime permission dialog.
+ * If Android suppresses the dialog (because the user previously chose
+ * "Don't ask again" / has "permanently denied" the permission), we surface
+ * an "Open settings" deep link that lands the user on the app's permission
+ * page so they can flip the toggle. When they return we re-check.
  */
 export default function GpsGate() {
   const native = Capacitor.isNativePlatform();
   const [granted, setGranted] = useState<boolean | null>(native ? null : true);
   const [requesting, setRequesting] = useState(false);
+  const [attempted, setAttempted] = useState(false);
+  const settingsTriedRef = useRef(false);
 
   const check = async () => {
     if (!native) { setGranted(true); return; }
     try {
       const p = await Geolocation.checkPermissions();
-      setGranted(p.location === 'granted' || p.coarseLocation === 'granted');
+      const ok = p.location === 'granted' || p.coarseLocation === 'granted';
+      setGranted(ok);
+      // Once we've been granted, no further work — gate hides.
     } catch {
       setGranted(false);
     }
@@ -40,14 +45,42 @@ export default function GpsGate() {
 
   const ask = async () => {
     setRequesting(true);
+    setAttempted(true);
     try {
-      const req = await Geolocation.requestPermissions({ permissions: ['location'] });
-      const ok = req.location === 'granted' || req.coarseLocation === 'granted';
+      // First: request both fine + coarse so Android shows the system prompt.
+      const req = await Geolocation.requestPermissions({
+        permissions: ['location', 'coarseLocation'],
+      });
+      let ok = req.location === 'granted' || req.coarseLocation === 'granted';
+
+      // Fallback: some OEMs return 'prompt' without ever showing UI until you
+      // actually request a location. Force-trigger by reading position.
+      if (!ok) {
+        try {
+          await Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 8000 });
+          const after = await Geolocation.checkPermissions();
+          ok = after.location === 'granted' || after.coarseLocation === 'granted';
+        } catch { /* swallow */ }
+      }
       setGranted(ok);
     } catch {
       setGranted(false);
     } finally {
       setRequesting(false);
+    }
+  };
+
+  // Deep-link into the app's permission page in Android Settings.
+  // Uses an Android intent: URL which the WebView resolves natively.
+  const openAndroidSettings = () => {
+    settingsTriedRef.current = true;
+    const pkg = 'com.kalyanikitchen.app';
+    const url = `intent://settings#Intent;scheme=package;action=android.settings.APPLICATION_DETAILS_SETTINGS;package=${pkg};end`;
+    try {
+      window.location.href = url;
+    } catch {
+      // last-ditch: open generic location settings
+      window.location.href = 'intent://#Intent;action=android.settings.LOCATION_SOURCE_SETTINGS;end';
     }
   };
 
@@ -65,11 +98,18 @@ export default function GpsGate() {
         <button className="gpsgate-btn" onClick={ask} disabled={requesting}>
           {requesting ? 'Requesting…' : 'Enable location'}
         </button>
+        {attempted && (
+          <button className="gpsgate-btn gpsgate-btn--secondary" onClick={openAndroidSettings}>
+            <SettingsIcon size={16} /> Open app settings
+          </button>
+        )}
         <p className="gpsgate-hint">
-          If you previously denied permission, open device Settings → Apps →
-          Kalyani Kitchen → Permissions → Location and allow it.
+          {attempted
+            ? 'No prompt? Tap "Open app settings" → Permissions → Location → Allow only this time or While using the app.'
+            : 'If you previously denied permission, open device Settings → Apps → Kalyani Kitchen → Permissions → Location and allow it.'}
         </p>
       </div>
     </div>
   );
 }
+
