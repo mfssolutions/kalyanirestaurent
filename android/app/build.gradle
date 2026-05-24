@@ -64,6 +64,19 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+
+    // Firebase BoM + App Check (Play Integrity + Debug). These are what make
+    // Phone Auth verify silently instead of opening a Chrome tab.
+    implementation platform('com.google.firebase:firebase-bom:33.7.0')
+    implementation 'com.google.firebase:firebase-appcheck-playintegrity'
+    implementation 'com.google.firebase:firebase-appcheck-debug'
+}
+
+// Ensure BuildConfig is generated so MainActivity can read BuildConfig.DEBUG.
+android {
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 apply from: 'capacitor.build.gradle'
