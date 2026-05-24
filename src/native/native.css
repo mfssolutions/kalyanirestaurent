@@ -332,3 +332,38 @@ body.kk-native .auth-page__body {
 body.kk-native {
   background: #1e6b3c;
 }
+
+/* ============================================================================
+ * Strict rule: header and footer must be fixed on every native page.
+ * - Web Header is already position: fixed.
+ * - MobileNavbar is already position: fixed bottom:0 (only display:flex on
+ *   mobile widths; native devices satisfy that).
+ * The blocks below add safe-area-aware padding and force visibility on the
+ * native shell so they never scroll away.
+ * ============================================================================ */
+
+/* Force the bottom nav to render on native regardless of viewport width. */
+body.kk-native .mobile-bottom-nav {
+  display: flex !important;
+  justify-content: space-around;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+}
+
+/* Web Header (used on /cart, /orders, /profile, etc.) — make sure it sits on
+   top of native safe area. */
+body.kk-native .header {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+}
+
+/* Generic page-wrapper padding so content clears fixed footer on native. */
+body.kk-native .page-wrapper {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 64px);
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+/* Reset the green native body background once we are on the home/native-home
+   screen (auth pages already override .auth-page background). */
+body.kk-native[data-path="/"] {
+  background: #ffffff;
+}

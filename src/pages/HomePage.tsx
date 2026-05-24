@@ -6,6 +6,8 @@ import AboutUs from '../components/AboutUs';
 import Footer from '../components/Footer';
 import MobileNavbar from '../components/MobileNavbar';
 import CartButton from '../components/CartButton';
+import { isNative } from '../native/initNative';
+import NativeHome from '../native/NativeHome';
 
 const HomePage = () => {
   const [location, setLocation] = useState<string | null>(null);
@@ -42,6 +44,15 @@ const HomePage = () => {
       }
     );
   }, []);
+
+  if (isNative()) {
+    return (
+      <div className="page-wrapper">
+        <NativeHome location={location} />
+        <MobileNavbar />
+      </div>
+    );
+  }
 
   return (
     <div className="page-wrapper">
