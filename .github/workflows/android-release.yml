@@ -147,8 +147,10 @@ jobs:
             console.log(list.map(o=>(o.android_info&&o.android_info.certificate_hash)||'').filter(Boolean).join(' '))")
           echo "Keystore SHA1 (no colons, lowercase): $SHA1_KS"
           echo "google-services.json registered SHA1 hashes: ${SHA1_GS:-<none>}"
-          if [ -z "$SHA1_GS" ] || ! echo " $SHA1_GS " | grep -q " $SHA1_KS "; then
-            echo "::warning::Release SHA1 is NOT registered in google-services.json. Firebase Phone Auth will fail with 'missing valid app identifier'. Register the SHA1 above in Firebase Console, re-download google-services.json, and update the GOOGLE_SERVICES_JSON_BASE64 secret."
+          if [ -z "$SHA1_GS" ]; then
+            echo "Note: google-services.json contains no oauth_client SHA hashes. This is normal when only Phone/Email providers are enabled (Google Sign-In would populate them). Firebase Phone Auth validates the SHA server-side against fingerprints registered in Firebase Console."
+          elif ! echo " $SHA1_GS " | grep -q " $SHA1_KS "; then
+            echo "::warning::Release SHA1 is not listed in google-services.json oauth_client. Verify that $SHA1_KS is registered in Firebase Console → Project Settings → Android app fingerprints."
           else
             echo "OK: release SHA1 is registered in google-services.json"
           fi
