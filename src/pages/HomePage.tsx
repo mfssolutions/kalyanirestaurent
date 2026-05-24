@@ -8,16 +8,17 @@ import MobileNavbar from '../components/MobileNavbar';
 import CartButton from '../components/CartButton';
 import { isNative } from '../native/initNative';
 import NativeHome from '../native/NativeHome';
+import GpsGate from '../native/GpsGate';
+import { useNativeLocation } from '../native/useNativeLocation';
 
 const HomePage = () => {
-  const [location, setLocation] = useState<string | null>(null);
+  const [webLocation, setWebLocation] = useState<string | null>(null);
+  const native = isNative();
+  const nl = useNativeLocation();
 
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocation('Location not supported');
-      return;
-    }
-
+    if (native) return; // native path handled by useNativeLocation
+    if (!navigator.geolocation) { setWebLocation('Location not supported'); return; }
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
@@ -31,24 +32,24 @@ const HomePage = () => {
             data.address?.city ||
             data.address?.town ||
             data.address?.village ||
-            data.address?.county ||
-            '';
+            data.address?.county || '';
           const state = data.address?.state || '';
-          setLocation(city ? `${city}, ${state}` : `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+          setWebLocation(city ? `${city}, ${state}` : `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
         } catch {
-          setLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+          setWebLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
         }
       },
-      () => {
-        setLocation(null);
-      }
+      () => { setWebLocation(null); }
     );
-  }, []);
+  }, [native]);
 
-  if (isNative()) {
+  const location = native ? nl.label : webLocation;
+
+  if (native) {
     return (
       <div className="page-wrapper">
-        <NativeHome location={location} />
+        <GpsGate />
+        <NativeHome location={location} onRequestLocation={nl.request} />
         <MobileNavbar />
       </div>
     );

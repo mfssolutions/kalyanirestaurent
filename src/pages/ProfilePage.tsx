@@ -3,11 +3,14 @@ import { ArrowLeft, User as UserIcon, Phone, MapPin, ClipboardList, LogOut } fro
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import MobileNavbar from '../components/MobileNavbar';
+import NativeTopBar from '../native/NativeTopBar';
+import { isNative } from '../native/initNative';
 import './ProfilePage.css';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
+  const native = isNative();
 
   if (!isAuthenticated || !user) {
     navigate('/login', { replace: true, state: { from: '/profile' } });
@@ -23,14 +26,16 @@ export default function ProfilePage() {
 
   return (
     <>
-      <Header location={null} />
+      {native ? <NativeTopBar title="My Profile" onBack={handleBack} /> : <Header location={null} />}
       <div className="profile-page">
-        <div className="profile-page__topbar">
-          <button className="profile-page__back" onClick={handleBack} aria-label="Back">
-            <ArrowLeft size={22} />
-          </button>
-          <h1>My Profile</h1>
-        </div>
+        {!native && (
+          <div className="profile-page__topbar">
+            <button className="profile-page__back" onClick={handleBack} aria-label="Back">
+              <ArrowLeft size={22} />
+            </button>
+            <h1>My Profile</h1>
+          </div>
+        )}
 
         <div className="profile-page__body">
           <div className="profile-page__avatar">

@@ -1,0 +1,252 @@
+/* Strict product-card model — Android only (rendered by NativeHome which is
+ * mounted under isNative()). Web build never imports this file.
+ *
+ * Layout: horizontal card, image-left + body-right, matches the attached spec.
+ */
+
+.npc {
+  display: grid;
+  grid-template-columns: 128px 1fr;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* ---- Image column -------------------------------------------------------- */
+.npc-imgwrap {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #1e40af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.npc-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.npc-img-placeholder {
+  flex-direction: column;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  gap: 4px;
+}
+.npc-img-placeholder small {
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.npc-ribbon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: #dc2626;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  padding: 3px 8px 4px;
+  border-radius: 10px 0 8px 0;
+  z-index: 2;
+}
+.npc-combo {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  background: #fbbf24;
+  color: #111827;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  z-index: 2;
+}
+
+.npc-dots {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+  z-index: 2;
+}
+.npc-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+}
+.npc-dot.is-active { background: #ffffff; width: 14px; border-radius: 3px; }
+
+.npc-swipe {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 3;
+}
+.npc-swipe.prev { left: 4px; }
+.npc-swipe.next { right: 4px; }
+
+/* ---- Body column --------------------------------------------------------- */
+.npc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 2px 4px 2px 0;
+}
+.npc-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.npc-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.25;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Swiggy-style veg/non-veg square badge */
+.npc-veg {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1.5px solid #16a34a;
+  background: #ffffff;
+}
+.npc-veg.non { border-color: #dc2626; }
+.npc-veg-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #16a34a;
+}
+.npc-veg.non .npc-veg-dot { background: #dc2626; }
+
+.npc-code {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+.npc-price {
+  font-size: 16px;
+  font-weight: 900;
+  color: #111827;
+  margin: 2px 0 0;
+}
+
+.npc-sizes {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.npc-size-chip {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  letter-spacing: 0.2px;
+}
+
+.npc-foot {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 6px;
+}
+
+.npc-add {
+  background: #111827;
+  color: #ffffff;
+  border: 0;
+  height: 32px;
+  min-width: 76px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.npc-add:disabled {
+  background: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+.npc-add span { font-size: 14px; line-height: 1; }
+
+.npc-qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #16a34a;
+  border-radius: 8px;
+  height: 32px;
+  padding: 0 4px;
+}
+.npc-qty button {
+  width: 26px; height: 26px;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.npc-qty span {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  min-width: 18px;
+  text-align: center;
+}

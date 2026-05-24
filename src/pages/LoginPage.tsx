@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Phone, Shield, Loader, RotateCw } from 'lucide-react';
+import { ArrowLeft, Phone, Shield, Loader, RotateCw, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useResendTimer } from '../lib/useResendTimer';
 import { isNative, resetNativeLanding } from '../native/initNative';
@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const { remaining, start, canResend } = useResendTimer(45);
@@ -30,6 +31,12 @@ export default function LoginPage() {
     return () => { resetAuthFlow('recaptcha-customer'); };
   }, [resetAuthFlow]);
 
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), 3500);
+    return () => clearTimeout(id);
+  }, [toast]);
+
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -39,6 +46,7 @@ export default function LoginPage() {
     setLoading(false);
     if (!res.success) { setError(res.error || 'Failed to send OTP'); return; }
     setStep('otp');
+    setToast(`OTP sent to +91 ${mobile}`);
     start();
   };
 
@@ -51,6 +59,7 @@ export default function LoginPage() {
     setResending(false);
     if (!res.success) { setError(res.error || 'Could not resend OTP'); return; }
     setOtp('');
+    setToast(`OTP re-sent to +91 ${mobile}`);
     start();
   };
 
@@ -63,7 +72,10 @@ export default function LoginPage() {
     setLoading(false);
     if (!res.success) { setError(res.error || 'Invalid OTP'); return; }
     if (res.isNewUser) {
-      navigate('/signup', { state: { phone: mobile, verified: true, from: redirectTo }, replace: true });
+      setToast('No account found. Please complete registration.');
+      setTimeout(() => {
+        navigate('/signup', { state: { phone: mobile, verified: true, from: redirectTo }, replace: true });
+      }, 900);
       return;
     }
     navigate(redirectTo, { replace: true });
@@ -81,6 +93,11 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page">
+      {toast && (
+        <div className="auth-toast" role="status">
+          <CheckCircle2 size={16} /> {toast}
+        </div>
+      )}
       <div className="auth-page__topbar">
         <button className="auth-page__back" onClick={handleBack} aria-label="Back">
           <ArrowLeft size={22} />

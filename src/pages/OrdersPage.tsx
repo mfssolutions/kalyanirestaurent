@@ -3,16 +3,19 @@ import { Clock, Package } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import MobileNavbar from '../components/MobileNavbar';
+import NativeTopBar from '../native/NativeTopBar';
+import { isNative } from '../native/initNative';
 import { useOrders } from '../contexts/OrderContext';
 import '../components/OrderTracking.css';
 
 export default function OrdersPage() {
   const { orders } = useOrders();
   const navigate = useNavigate();
+  const native = isNative();
 
   return (
     <div className="page-wrapper">
-      <Header location={null} />
+      {native ? <NativeTopBar title="My Orders" /> : <Header location={null} />}
       <main className="main-content">
         <div className="tracking" style={{ minHeight: '60vh' }}>
           <h1 style={{ marginBottom: 24 }}>My Orders</h1>

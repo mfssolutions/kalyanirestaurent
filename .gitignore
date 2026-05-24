@@ -44,3 +44,4 @@ android/app/debug/
 .secrets-input.env
 google-services.json
 release.jks
+KEYSTORE_BACKUP.txt

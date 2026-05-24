@@ -8,6 +8,11 @@ export interface Category {
   isActive: boolean;
 }
 
+export interface MenuItemSize {
+  label: string;   // e.g. 'Quarter', 'Half', 'Full'
+  price: number;
+}
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -15,6 +20,10 @@ export interface MenuItem {
   price: number;
   category: MenuCategory;
   image?: string;
+  images?: string[];           // additional images for swipe carousel (native)
+  sizes?: MenuItemSize[];      // optional portion variants
+  keywords?: string[];         // searchable keywords (curated by admin)
+  isCombo?: boolean;           // shows COMBO label
   isVeg: boolean;
   isAvailable: boolean;
   offer?: string;

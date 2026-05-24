@@ -1,15 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { Search, SlidersHorizontal, ShoppingBag, MapPin, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { useAdmin } from '../contexts/AdminContext';
 import { useCart } from '../contexts/CartContext';
 import { useConfig } from '../contexts/ConfigContext';
-import type { MenuCategory } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import type { MenuCategory, MenuItem } from '../types';
 import { CATEGORY_LABELS } from '../types';
+import NativeProductCard from './NativeProductCard';
 import './NativeHome.css';
 
 interface NativeHomeProps {
   location: string | null;
+  onRequestLocation?: () => void;
 }
 
 // Emoji icons for the round category chips (mock-accurate).
@@ -53,10 +58,11 @@ const OFFERS = [
   },
 ];
 
-export default function NativeHome({ location }: NativeHomeProps) {
+export default function NativeHome({ location, onRequestLocation }: NativeHomeProps) {
   const { menuItems, categories } = useAdmin();
-  const { addItem, removeItem, getItemQuantity, totalItems } = useCart();
+  const { totalItems } = useCart();
   const { get } = useConfig();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const catSlugs = categories.length > 0
@@ -69,28 +75,69 @@ export default function NativeHome({ location }: NativeHomeProps) {
   const [activeCategory, setActiveCategory] = useState<MenuCategory>(catSlugs[0] || 'breakfast');
   const [query, setQuery] = useState('');
   const [activeOffer, setActiveOffer] = useState(0);
+  const [vegOnly, setVegOnly] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'default' | 'price-asc' | 'price-desc'>('default');
 
   const normalizedQuery = query.trim().toLowerCase();
   const isSearching = normalizedQuery.length > 0;
 
-  const filteredItems = useMemo(() => {
-    if (isSearching) {
-      return menuItems
-        .filter(it => it.isAvailable !== false)
-        .filter(it => {
-          const hay = [
-            it.name,
-            it.description,
-            catLabels[it.category] || it.category,
-          ].filter(Boolean).join(' ').toLowerCase();
-          return normalizedQuery.split(/\s+/).every(token => hay.includes(token));
-        });
+  const matchesQuery = (it: MenuItem) => {
+    // Prefer admin-curated `keywords` array when present (exact-keyword match);
+    // fall back to substring match across name / description / category label.
+    if (it.keywords && it.keywords.length > 0) {
+      const kw = it.keywords.map(k => k.toLowerCase());
+      if (normalizedQuery.split(/\s+/).every(tok => kw.some(k => k.includes(tok)))) {
+        return true;
+      }
     }
-    return menuItems.filter(item => item.category === activeCategory && item.isAvailable);
-  }, [menuItems, activeCategory, isSearching, normalizedQuery, catLabels]);
+    const hay = [
+      it.name,
+      it.description,
+      catLabels[it.category] || it.category,
+      it.productCode,
+    ].filter(Boolean).join(' ').toLowerCase();
+    return normalizedQuery.split(/\s+/).every(tok => hay.includes(tok));
+  };
+
+  const filteredItems = useMemo(() => {
+    let list = menuItems.filter(it => it.isAvailable !== false);
+    if (isSearching) {
+      list = list.filter(matchesQuery);
+    } else {
+      list = list.filter(it => it.category === activeCategory);
+    }
+    if (vegOnly) list = list.filter(it => it.isVeg);
+    if (sortBy === 'price-asc')  list = [...list].sort((a, b) => a.price - b.price);
+    if (sortBy === 'price-desc') list = [...list].sort((a, b) => b.price - a.price);
+    return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menuItems, activeCategory, isSearching, normalizedQuery, vegOnly, sortBy]);
+
+  /* ---- Log searches to backend (debounced) ---- */
+  const lastLoggedRef = useRef<string>('');
+  useEffect(() => {
+    if (!isSearching) return;
+    const q = normalizedQuery;
+    const id = setTimeout(() => {
+      if (lastLoggedRef.current === q) return;
+      lastLoggedRef.current = q;
+      const matched = filteredItems.slice(0, 5).map(it => ({
+        id: it.id, name: it.name, productCode: it.productCode,
+      }));
+      supabase.from('search_logs').insert({
+        user_id: user?.id || null,
+        keyword: q,
+        results_count: filteredItems.length,
+        matched_items: matched,
+        platform: Capacitor.isNativePlatform() ? 'android' : 'web',
+      }).then(() => {}, () => {/* swallow */});
+    }, 700);
+    return () => clearTimeout(id);
+  }, [normalizedQuery, isSearching, filteredItems, user]);
 
   const restaurantName = get('restaurant_name', 'Kalyani Kitchen');
-  const displayLocation = location || 'Set your delivery address';
+  const displayLocation = location || 'Tap to set address';
 
   return (
     <div className="nh-page">
@@ -99,7 +146,7 @@ export default function NativeHome({ location }: NativeHomeProps) {
         <button
           className="nh-addr"
           type="button"
-          onClick={() => navigate('/profile')}
+          onClick={() => onRequestLocation ? onRequestLocation() : navigate('/profile')}
           aria-label="Change delivery address"
         >
           <span className="nh-addr-pin">
@@ -138,7 +185,7 @@ export default function NativeHome({ location }: NativeHomeProps) {
               aria-label="Search menu"
             />
           </div>
-          <button className="nh-filter-btn" type="button" aria-label="Filters">
+          <button className="nh-filter-btn" type="button" aria-label="Filters" onClick={() => setFilterOpen(true)}>
             <SlidersHorizontal size={18} strokeWidth={2.5} />
           </button>
         </div>
@@ -208,45 +255,11 @@ export default function NativeHome({ location }: NativeHomeProps) {
           </h2>
         </div>
 
-        {/* Menu grid */}
-        <div className="nh-grid">
-          {filteredItems.map(item => {
-            const qty = getItemQuantity(item.id);
-            const outOfStock = (item.qty ?? 100) <= 0;
-            return (
-              <div className="nh-card" key={item.id}>
-                <div className="nh-card-img">
-                  {item.offer && <span className="nh-card-offer">{item.offer}</span>}
-                  {item.image ? (
-                    <img src={item.image} alt={item.name} loading="lazy" />
-                  ) : (
-                    <div className="nh-card-img-fallback" aria-hidden="true">🍽️</div>
-                  )}
-                </div>
-                <div className="nh-card-body">
-                  <div className="nh-card-head">
-                    <span className={`nh-veg ${item.isVeg ? '' : 'non'}`} aria-hidden="true" />
-                    <h3 className="nh-card-name">{item.name}</h3>
-                  </div>
-                  {item.description && <p className="nh-card-desc">{item.description}</p>}
-                  <div className="nh-card-foot">
-                    <span className="nh-card-price">₹{item.price}</span>
-                    {outOfStock ? (
-                      <button className="nh-card-add" disabled>N/A</button>
-                    ) : qty === 0 ? (
-                      <button className="nh-card-add" onClick={() => addItem(item)}>ADD +</button>
-                    ) : (
-                      <div className="nh-card-qty">
-                        <button onClick={() => removeItem(item.id)} aria-label="Remove">−</button>
-                        <span>{qty}</span>
-                        <button onClick={() => addItem(item)} aria-label="Add">+</button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        {/* Menu grid: strict product card */}
+        <div className="nh-cards">
+          {filteredItems.map(item => (
+            <NativeProductCard key={item.id} item={item} />
+          ))}
           {filteredItems.length === 0 && (
             <p className="nh-empty">
               {isSearching ? 'No dishes match your search.' : 'No items available in this category right now.'}
@@ -254,6 +267,42 @@ export default function NativeHome({ location }: NativeHomeProps) {
           )}
         </div>
       </div>
+
+      {/* ============ FILTER BOTTOM SHEET ============ */}
+      {filterOpen && (
+        <div className="nh-filter-backdrop" onClick={() => setFilterOpen(false)}>
+          <div className="nh-filter-sheet" onClick={e => e.stopPropagation()}>
+            <h3>Filters</h3>
+            <label className="nh-filter-row">
+              <input
+                type="checkbox"
+                checked={vegOnly}
+                onChange={e => setVegOnly(e.target.checked)}
+              />
+              <span>Pure veg only</span>
+            </label>
+            <h4>Sort by</h4>
+            {[
+              { v: 'default',    l: 'Relevance' },
+              { v: 'price-asc',  l: 'Price: low to high' },
+              { v: 'price-desc', l: 'Price: high to low' },
+            ].map(o => (
+              <label className="nh-filter-row" key={o.v}>
+                <input
+                  type="radio"
+                  name="sort"
+                  checked={sortBy === o.v}
+                  onChange={() => setSortBy(o.v as 'default' | 'price-asc' | 'price-desc')}
+                />
+                <span>{o.l}</span>
+              </label>
+            ))}
+            <button className="nh-filter-apply" onClick={() => setFilterOpen(false)}>
+              Apply
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -367,3 +367,48 @@ body.kk-native .page-wrapper {
 body.kk-native[data-path="/"] {
   background: #ffffff;
 }
+
+/* ============================================================================
+ * Hide web Header on ALL native pages — the spec says the user does NOT want
+ * the web app header on Android. Pages that need a header use NativeTopBar.
+ * ============================================================================ */
+body.kk-native .header {
+  display: none !important;
+}
+
+/* Compensate: pages whose .page-wrapper assumed Header padding need top room
+   for the NativeTopBar (56px + safe area). */
+body.kk-native[data-path="/orders"]   .main-content,
+body.kk-native[data-path="/cart"]     .cart-page__body,
+body.kk-native[data-path="/profile"]  .profile-page__body {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 64px) !important;
+}
+
+/* Active bottom-nav highlight — strong green pill behind active item */
+body.kk-native .mobile-bottom-nav .nav-item {
+  position: relative;
+  flex: 1;
+  font-weight: 600;
+  color: #6b7280;
+}
+body.kk-native .mobile-bottom-nav .nav-item svg { stroke-width: 2.2; }
+body.kk-native .mobile-bottom-nav .nav-item.active {
+  color: #16a34a !important;
+}
+body.kk-native .mobile-bottom-nav .nav-item.active svg {
+  color: #16a34a;
+}
+body.kk-native .mobile-bottom-nav .nav-item.active::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: #16a34a;
+}
+
+/* Hide the native ProfilePage internal duplicate topbar (we render NativeTopBar) */
+body.kk-native .profile-page__topbar { display: none !important; }

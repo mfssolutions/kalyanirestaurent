@@ -501,3 +501,59 @@
 /* ---- Hide web header/hero/footer/about/cart-button on native home ------- */
 body.kk-native .nh-page ~ .header,
 body.kk-native .nh-page ~ * .header { /* no-op fallback */ }
+
+/* ---- Strict product-card list (replaces .nh-grid on native) ------------- */
+.nh-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 14px 12px;
+}
+
+/* ---- Filter bottom sheet ------------------------------------------------- */
+.nh-filter-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.nh-filter-sheet {
+  background: #ffffff;
+  width: 100%;
+  max-width: 520px;
+  border-radius: 22px 22px 0 0;
+  padding: 22px 22px calc(env(safe-area-inset-bottom, 0px) + 22px);
+  animation: nh-slide 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes nh-slide { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.nh-filter-sheet h3 { margin: 0 0 14px; font-size: 17px; font-weight: 800; color: #111827; }
+.nh-filter-sheet h4 { margin: 14px 0 8px; font-size: 13px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+.nh-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  cursor: pointer;
+}
+.nh-filter-row input[type="checkbox"],
+.nh-filter-row input[type="radio"] {
+  width: 18px; height: 18px; accent-color: #16a34a;
+}
+.nh-filter-apply {
+  width: 100%;
+  margin-top: 18px;
+  background: #16a34a;
+  color: #fff;
+  border: 0;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
